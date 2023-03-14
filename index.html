@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:,">
+  <title>4-byte-gas-test</title>
+  <style>
+    body {
+      background: hsl(170deg 50% 95%);
+      color: hsl(170deg 50% 5%);
+      font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif;
+      inline-size: min(100% - 16px, 720px);
+      margin-inline: auto;
+    }
+
+    .introduction {
+      font-size: 1.2rem;
+    }
+
+    .subtitle,
+    dt {
+      font-weight: 600;
+    }
+
+    dd {
+      margin-block-end: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>4-byte-gas-test</h1>
+  </header>
+
+  <main>
+    <p class="introduction">
+      When a Solidity function is compiled into EVM bytecode, a 4-byte function signature is generated to identify the
+      function. The smaller the function signature, the less gas it costs to look up. I've deployed a smart contract on Sepolia to
+      provide a basic demonstration of this effect.
+    </p>
+    <a href="https://sepolia.etherscan.io/address/0x63C1735a6b7419Ae4C7b87c486Ac7C393d983980">0x63C1735a6b7419Ae4C7b87c486Ac7C393d983980</a>
+    <p class="subtitle"><code>eth_estimateGas</code> results:</p>
+    <dl></dl>
+    <a href="https://github.com/ardislu/4-byte-gas-test">GitHub</a>
+  </main>
+
+  <script type="module">
+    const node = 'https://rpc.sepolia.org/';
+    const contract = '0x63C1735a6b7419Ae4C7b87c486Ac7C393d983980';
+    const functionData = [
+      ['f(uint256)', '0xb3de648b'],
+      ['f_17(uint256)', '0x0042aabc'],
+      ['f_oOq(uint256)', '0x0000e0f0'],
+      ['f2_bz3g(uint256)', '0x00000053'],
+      ['f1_aE3j(uint256)', '0x00000006']
+    ];
+    const argument = `${'0'.repeat(63)}1`;
+
+    const payload = [];
+    for (const [name, signature] of functionData) {
+      payload.push({
+        jsonrpc: '2.0',
+        id: name,
+        method: 'eth_estimateGas',
+        params: [
+          {
+            to: contract,
+            data: `${signature}${argument}`
+          },
+          'latest'
+        ]
+      });
+    }
+
+    const response = await fetch(node, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    }).then(r => r.json());
+
+    let injectionString = '';
+    for (const [name, signature] of functionData) {
+      injectionString += `
+        <dt><code>${name}</code> — <code>${signature}</code></dt>
+        <dd>${BigInt(response.find(e => e.id === name).result).toString()} gas</dd>
+      `;
+    }
+    document.querySelector('dl').insertAdjacentHTML('beforeend', injectionString);
+  </script>
+</body>
+
+</html>
