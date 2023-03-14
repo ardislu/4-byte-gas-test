@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.19;
 
 /// @title A simple smart contract to test the gas savings from optimizing 4-byte function signatures.
 contract FunctionSignatureTest {
